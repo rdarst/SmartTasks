@@ -1,4 +1,4 @@
-SmartTask script for PostInstall to sabnity check the installed policy, if the check fail revert to last good known policy and open a ticket in service now to the administrator who initiadet the policy install.
+SmartTask script for PostInstall to sanity check the installed policy, if the check fail revert to last good known policy and open a ticket in service now to the administrator who initiated the policy install.
 
 **Example JSON for the Custom Data in the SmartTask**
 ```
