@@ -21,6 +21,15 @@ short_description=$(echo $trigger_json | jq -r '."custom-data".short_description
 # Getting the short description to be used in the incident created in ServiceNow 
 comments=$(echo $trigger_json | jq -r '."custom-data".comments')
 
+# This function will revert the policy to a previous revision
+function revert_to_last_good_known_policy()
+{
+  mgmt_cli -r true --format json install-policy \
+  policy-package "$install_policy_package" access true targets.1 "$install_policy_targets" \
+  revision "18d4f80f-fd8e-4ac4-b690-5597b0cb5397" > /tmp/revert.json
+}
+
+# This funtion will create a servicenow incident ticket using the servicenow API
 function servicenow_report_incident()
 {
   curl_cli "https://dev71699.service-now.com/api/now/table/incident" \
@@ -28,23 +37,32 @@ function servicenow_report_incident()
   --request POST \
   --header "Accept:application/json" \
   --header "Content-Type:application/json" \
-  --data '{"short_description":"'"$short_description $install_policy_targets"'","comments":"'"$install_policy_package $comments"'", "active": "true", "caller_id": "System Administrator", "urgency": "1", "impact": "1", "priority": "1"}' \
+  --data '{"short_description":"'"$short_description $install_policy_targets"'", "comments":"'"$install_policy_package $comments"'", "active": "true", "caller_id": "'"$install_policy_initiator"'", "urgency": "1", "impact": "1", "priority": "1"}' \
   --user "$smarttask_servicenow_user":"$smarttask_servicenow_password"
 } 
+
+# This function will verify that the CPX360 business critical traffic is working after policy install
+function sanity_check()
+{
+  curl_cli "https://postman-echo.com/response-headers?Event=CPX360_is_kicking" \
+  --silent \
+  --insecure \
+  --location \
+  --request GET  \
+  | jq '.Event | contains("CPX360_is_kicking")'
+}
 
 # If the install policy fails, exit without error
 if [[ $(echo $install_policy_result | jq 'contains("Succes")') = "false" ]]; then
   exit 0
 fi
 
-# Checking traffic to crtical business application and stores the result
-sanity_check=$(curl_cli --silent --insecure --location --request GET "https://postman-echo.com/response-headers?Event=CPX360_is_kicking" | jq '.Event | contains("CPX360_is_kicking")')
+# Checking traffic to critical business application and stores the result
+sanity_check_result=$(sanity_check)
 
 # If the install policy succeeds, execute sanity checks
-if [[ $(echo $sanity_check) != "true" ]]; then
-  mgmt_cli -r true install-policy policy-package "standard" access true targets.1 "smsg60" revision "18d4f80f-fd8e-4ac4-b690-5597b0cb5397" --format json > /tmp/revert.json
-  #sanity_notification=$(echo $trigger_json | jq  '{"Policy": .tasksResult[].target,"installed by": .initiator,"message": "failed sainty check of critical services, reverting to last good known policy, request to validate the policy have been sent to the intiator of the policy install"}'
-  servicenow_report_incident
-  #echo $sanity_notification > /tmp/policy_sanity_notification.out
+if [[ $(echo $sanity_check_result) != "true" ]]; then
+  servicenow_report_incident &
+  revert_to_last_good_known_policy
   exit 1
 fi
