@@ -5,7 +5,7 @@ import boto3
 sns = boto3.client('sns')
 
 #SMS Phone Number
-phone_number=os.environ.get('SMS_NUMBER')
+#phone_number=os.environ.get('SMS_NUMBER')
 
 def find_tags(string, action, customdata):
     message = ""
@@ -34,6 +34,7 @@ def lambda_handler(event, context):
     data = event
     
     customdata = data['custom-data']['allowed-tag']
+    phone_number=data['custom-data']['phone_number']
     #print('##customdata ', customdata)
     modified = data['operations']['modified-objects']
     deleted = data['operations']['deleted-objects']
