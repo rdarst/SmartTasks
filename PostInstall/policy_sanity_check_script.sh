@@ -70,7 +70,7 @@ function sanity_check()
   --insecure \
   --location \
   --request GET  \
-  | jq '.Event | contains("CPX360_is_kicking")'
+  | jq '.Event | contains("CPX360_is_kicking!")'
 }
 
 # If the install policy fails, exit without error
