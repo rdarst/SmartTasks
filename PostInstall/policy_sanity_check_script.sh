@@ -39,13 +39,19 @@ do
    fi
 done  <<<"$install_policy_targets"
 
+function get_uid_of_last_good_known_installed_policy()
+{
+  mgmt_cli -r true --format json show package name standard \
+  | jq -r '."installation-targets-revision"[].revision.uid' > /tmp/policy_revision_uid.out
+}
 
 # This function will revert the policy to a previous revision
 function revert_to_last_good_known_policy()
 {
+  policy_revision_uid=$(cat /tmp/policy_revision_uid.out)
   mgmt_cli -r true --format json install-policy \
   policy-package "$install_policy_package" access true \
-  revision "d43eff97-0c56-48f6-9bb4-8ae002f166d3" > /tmp/revert.json
+  revision "$policy_revision_uid" > /tmp/revert.json
 }
 
 # This function will create a servicenow incident ticket using the servicenow API
@@ -81,10 +87,12 @@ fi
 # Checking traffic to critical business application and stores the result
 sanity_check_result=$(sanity_check)
 
-# If the install policy succeeds, execute sanity checks
+# If the install policy succeeds, execute sanity checks, if sanity check is false restore to last known good policy and create a servicenow incident, if santiy check is true update to the policy revision uid to use as last good known policy
 if [[ $(echo $sanity_check_result) != "true" ]]; then
   servicenow_report_incident &
   sleep 5
   revert_to_last_good_known_policy
   exit 1
+else
+  get_uid_of_last_good_known_installed_policy
 fi
