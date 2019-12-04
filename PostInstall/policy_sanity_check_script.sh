@@ -65,7 +65,7 @@ function servicenow_report_incident()
 # This function will verify that the CPX360 business critical traffic is working after policy install
 function sanity_check()
 {
-  curl_cli "https://postman-echo.com/response-headers?Event=CPX360_is_kicking" \
+  curl_cli 'https://postman-echo.com/response-headers?Event=CPX360_is_kicking!' \
   --silent \
   --insecure \
   --location \
