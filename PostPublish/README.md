@@ -16,9 +16,9 @@ mgmt_cli -r true -f json add smart-task name "Post Publish Application Tag Check
 **Use these commands to add the SmartTask using your customized Lambda computing service.**
 1. Download the Lambda_Tag_Check.py and put it on your Lambda computing service.
 2. Run the following commands on your management server to add the SmartTask, it will ask you to:
--Specify the URL to the URL of your Lambda service (needs to be valid HTTPS URL)
--Specify the  phone number you want to send the SMS to
--Specify the name of the tag you want to use in the your Check Point management server.
+   - Specify the URL to the URL of your Lambda service (needs to be valid HTTPS URL)
+   - Specify the  phone number you want to send the SMS to
+   - Specify the name of the tag you want to use in the your Check Point management server.
 
 ```
 echo '#!/bin/bash' > add-smart-task_post_publish_application_tag_check.sh
