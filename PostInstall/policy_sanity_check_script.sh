@@ -41,14 +41,22 @@ done  <<<"$install_policy_targets"
 
 function get_uid_of_last_good_known_installed_policy()
 {
-  mgmt_cli -r true --format json show package name standard \
-  | jq -r '."installation-targets-revision"[].revision.uid' > /tmp/policy_revision_uid.out
+  # Get the latest policy revision from all targets in the package only if there is one revision listed
+  revision_uid_json=`mgmt_cli -r true --format json show package name "$install_policy_package" | jq -r '."installation-targets-revision"[]'`
+  current_revision=`echo "$revision_uid_json" |jq -r '.revision.uid // empty'`
+  current_revision+=`echo "$revision_uid_json" |jq -r '."cluster-members-revision"[]?.revision.uid'`
+  current_revision_uniq=`echo "$current_revision" |sort -u`
+  count_revisions=`echo "$current_revision_uniq" |wc -l`
+  if [ "$count_revisions" -eq 1 ]
+    then
+      echo "$current_revision_uniq" > /tmp/policy_revision_uid.$install_policy_package.out
+  fi
 }
 
 # This function will revert the policy to a previous revision
 function revert_to_last_good_known_policy()
 {
-  policy_revision_uid=$(cat /tmp/policy_revision_uid.out)
+  policy_revision_uid=`cat /tmp/policy_revision_uid."$install_policy_package".out`
   mgmt_cli -r true --format json install-policy \
   policy-package "$install_policy_package" access true \
   revision "$policy_revision_uid" > /tmp/revert.json
@@ -57,7 +65,7 @@ function revert_to_last_good_known_policy()
 # This function will create a servicenow incident ticket using the servicenow API
 function servicenow_report_incident()
 {
-    json_post_data="{\"short_description\":\"${short_description} ${targets}\", \"comments\":\"${install_policy_package} ${comments}\", \"active\": \"true\", \"caller_id\": \"$install_policy_initiator\", \"urgency\": \"1\", \"impact\": \"1\", \"priority\": \"1\"}"
+  json_post_data="{\"short_description\":\"${short_description} ${targets}\", \"comments\":\"${install_policy_package} ${comments}\", \"active\": \"true\", \"caller_id\": \"$install_policy_initiator\", \"urgency\": \"1\", \"impact\": \"1\", \"priority\": \"1\"}"
   echo "$json_post_data" > /tmp/api_out.txt
   curl_cli "https://${smarttask_servicenow_host}/api/now/table/incident" \
   --insecure \
