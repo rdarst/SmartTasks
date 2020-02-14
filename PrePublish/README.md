@@ -10,5 +10,5 @@ SmartTask script for PrePublish to check to see the correct object type and tag 
 **Run the following command on the management server to configure this SmartTask**
 
 ```
-curl_cli -kLs https://raw.githubusercontent.com/jimoq/SmartTasks/master/PrePublish/Setup_SmartTask.sh
+curl_cli -kLs https://raw.githubusercontent.com/jimoq/SmartTasks/master/PrePublish/Setup_SmartTask.sh > Setup_SmartTask.sh; bash Setup_SmartTask.sh
 ```
