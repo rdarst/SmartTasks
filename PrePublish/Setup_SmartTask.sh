@@ -1,6 +1,6 @@
 #!/bin/bash
 varSid=$(mgmt_cli -r true -f json login | jq -r '.sid')
-curl_cli -kLs https://raw.githubusercontent.com/jimoq/SmartTasks/master/PrePublish/Prepublish.sh > pre-publish-tag-check.sh
+curl_cli -kLs https://raw.githubusercontent.com/rdarst/SmartTasks/master/PrePublish/Prepublish.sh > pre-publish-tag-check.sh
 read -p "Enter the admin you want to check (e.g.: api_user): " allowed_admin
 read -p "Enter the tag name you tagged your objects with (e.g.: Cloud): " allowed_tag
 mgmt_cli --session-id $varSid -f json add-tag name "$allowed_tag" color "violet red" | jq .name
